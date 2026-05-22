@@ -17,6 +17,8 @@ const AppConfig = {
 
   // Clave para guardar datos en el navegador
   storageKey: "fin_app",
+  storageKeyBudget: "fin_app_budget",
+
 };
 
 export default AppConfig;

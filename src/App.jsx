@@ -39,10 +39,19 @@ export default function App() {
   const [modal, setModal] = useState(false);
   const [type, setType] = useState("expense");
   const [form, setForm] = useState({ title: "", amount: "", category: "Comida", date: today() });
+  const [budgets, setBudgets] = useState(() =>
+  JSON.parse(localStorage.getItem(AppConfig.storageKeyBudget) || "{}")
+);
+const [budgetModal, setBudgetModal] = useState(false);
+const [budgetForm, setBudgetForm] = useState({ category: "Comida", amount: "" });
 
   useEffect(() => {
     localStorage.setItem(AppConfig.storageKey, JSON.stringify(transactions));
   }, [transactions]);
+
+  useEffect(() => {
+  localStorage.setItem(AppConfig.storageKeyBudget, JSON.stringify(budgets));
+}, [budgets]);
 
   const totalIncome = transactions.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
   const totalExpense = transactions.filter((t) => t.type === "expense").reduce((s, t) => s + t.amount, 0);
@@ -167,6 +176,7 @@ export default function App() {
         <div style={{ display: "flex", gap: 4, background: "#fff", border: "1px solid rgba(127,119,221,0.15)", borderRadius: 8, padding: 4, marginBottom: "1.25rem" }}>
           <button style={styles.tab(tab === "movimientos")} onClick={() => setTab("movimientos")}>Movimientos</button>
           <button style={styles.tab(tab === "reportes")} onClick={() => setTab("reportes")}>Reportes</button>
+          <button style={styles.tab(tab === "presupuesto")} onClick={() => setTab("presupuesto")}>Presupuesto</button>
         </div>
 
         {/* Movimientos */}
@@ -209,6 +219,43 @@ export default function App() {
             )}
           </div>
         )}
+
+{/* Presupuesto */}
+{tab === "presupuesto" && (
+  <div>
+    <button onClick={() => setBudgetModal(true)} style={styles.addBtn}>
+      + Establecer presupuesto
+    </button>
+    {CATS.expense.map((cat) => {
+      const gastado = transactions
+        .filter((t) => t.type === "expense" && t.category === cat.name)
+        .reduce((s, t) => s + t.amount, 0);
+      const presupuesto = budgets[cat.name] || 0;
+      const pct = presupuesto > 0 ? Math.min(Math.round(gastado / presupuesto * 100), 100) : 0;
+      const color = pct >= 100 ? "#D85A30" : pct >= 80 ? "#BA7517" : AppConfig.colors.primary;
+      const restante = presupuesto - gastado;
+      return (
+        <div key={cat.name} style={{ background: "#fff", border: "1px solid rgba(127,119,221,0.15)", borderRadius: 12, padding: "14px", marginBottom: 10, boxShadow: "0 2px 12px rgba(127,119,221,0.08)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+            <span style={{ fontWeight: 600, fontSize: 14 }}>{cat.name}</span>
+            <span style={{ fontSize: 12, color: restante < 0 ? "#D85A30" : "#6b6b8a" }}>
+              {presupuesto > 0 ? `${fmt(gastado)} / ${fmt(presupuesto)}` : "Sin presupuesto"}
+            </span>
+          </div>
+          <div style={{ height: 8, background: "#F4F3FB", borderRadius: 99, overflow: "hidden", marginBottom: 6 }}>
+            <div style={{ width: pct + "%", height: "100%", background: color, borderRadius: 99, transition: "width .5s" }}></div>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#6b6b8a" }}>
+            <span style={{ color }}>{pct}% usado</span>
+            <span style={{ color: restante < 0 ? "#D85A30" : "#1D9E75", fontWeight: 500 }}>
+              {restante >= 0 ? `${fmt(restante)} restante` : `${fmt(Math.abs(restante))} excedido ⚠️`}
+            </span>
+          </div>
+        </div>
+      );
+    })}
+  </div>
+)}
 
         {/* Reportes */}
         {tab === "reportes" && (
@@ -285,6 +332,36 @@ export default function App() {
           </button>
         </div>
       </nav>
+
+{/* Modal Presupuesto */}
+{budgetModal && (
+  <div onClick={(e) => e.target === e.currentTarget && setBudgetModal(false)}
+    style={{ position: "fixed", inset: 0, background: "rgba(26,26,46,0.5)", zIndex: 100, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+    <div style={{ background: "#fff", borderRadius: "20px 20px 0 0", padding: "1.5rem", width: "100%", maxWidth: 480 }}>
+      <div style={{ width: 40, height: 4, background: "rgba(127,119,221,0.3)", borderRadius: 99, margin: "0 auto 1.25rem" }}></div>
+      <div style={{ fontSize: 20, fontWeight: 600, marginBottom: "1rem" }}>Establecer presupuesto</div>
+      <div style={{ marginBottom: 14 }}>
+        <div style={{ fontSize: 12, color: "#6b6b8a", marginBottom: 5, fontWeight: 500 }}>CATEGORÍA</div>
+        <select style={styles.input} value={budgetForm.category} onChange={(e) => setBudgetForm({ ...budgetForm, category: e.target.value })}>
+          {CATS.expense.map((c) => <option key={c.name} value={c.name}>{c.name}</option>)}
+        </select>
+      </div>
+      <div style={{ marginBottom: 14 }}>
+        <div style={{ fontSize: 12, color: "#6b6b8a", marginBottom: 5, fontWeight: 500 }}>MONTO MENSUAL (₡)</div>
+        <input style={styles.input} type="number" placeholder="0" value={budgetForm.amount}
+          onChange={(e) => setBudgetForm({ ...budgetForm, amount: e.target.value })} />
+      </div>
+      <div style={{ display: "flex", gap: 8, marginTop: "1.25rem" }}>
+        <button style={styles.btnCancel} onClick={() => setBudgetModal(false)}>Cancelar</button>
+        <button style={styles.btnSave} onClick={() => {
+          if (!budgetForm.amount || parseFloat(budgetForm.amount) <= 0) return alert("Ingresa un monto válido");
+          setBudgets({ ...budgets, [budgetForm.category]: parseFloat(budgetForm.amount) });
+          setBudgetModal(false);
+        }}>Guardar</button>
+      </div>
+    </div>
+  </div>
+)}
 
       {/* Modal */}
       {modal && (

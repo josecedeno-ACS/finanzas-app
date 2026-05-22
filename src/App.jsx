@@ -1,3 +1,4 @@
+import AppConfig from "./config";
 import { useState, useEffect } from "react";
 import { Chart as ChartJS, ArcElement, Tooltip, CategoryScale, LinearScale, BarElement, Legend } from "chart.js";
 import { Doughnut, Bar } from "react-chartjs-2";
@@ -25,12 +26,12 @@ const CATS = {
 };
 
 const MONTHS = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-const fmt = (v) => "₡" + Math.round(v).toLocaleString("es-CR");
+const fmt = (v) => AppConfig.currency + Math.round(v).toLocaleString(AppConfig.locale);
 const today = () => new Date().toISOString().split("T")[0];
 
 export default function App() {
   const [transactions, setTransactions] = useState(() =>
-    JSON.parse(localStorage.getItem("fin_carolina") || "[]")
+    JSON.parse(localStorage.getItem(AppConfig.storageKey) || "[]")
   );
   const [tab, setTab] = useState("movimientos");
   const [filter, setFilter] = useState("todos");
@@ -40,7 +41,7 @@ export default function App() {
   const [form, setForm] = useState({ title: "", amount: "", category: "Comida", date: today() });
 
   useEffect(() => {
-    localStorage.setItem("fin_carolina", JSON.stringify(transactions));
+    localStorage.setItem(AppConfig.storageKey, JSON.stringify(transactions));
   }, [transactions]);
 
   const totalIncome = transactions.filter((t) => t.type === "income").reduce((s, t) => s + t.amount, 0);
@@ -110,7 +111,7 @@ export default function App() {
   const styles = {
     app: { maxWidth: 480, margin: "0 auto", padding: "1.25rem 1rem 5rem", minHeight: "100vh", fontFamily: "'DM Sans', sans-serif", background: "#F4F3FB", color: "#1a1a2e" },
     header: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem" },
-    avatar: { width: 40, height: 40, borderRadius: "50%", background: "linear-gradient(135deg,#7F77DD,#3C3489)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 600, color: "#fff" },
+    avatar: { width: 40, height: 40, borderRadius: "50%", background: `linear-gradient(135deg,${AppConfig.colors.primary},${AppConfig.colors.primaryDark})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 600, color: "#fff" },
     balCard: { background: "linear-gradient(135deg,#7F77DD 0%,#3C3489 100%)", borderRadius: 20, padding: "1.5rem", marginBottom: "1.25rem", position: "relative", overflow: "hidden", boxShadow: "0 8px 24px rgba(127,119,221,0.35)" },
     statPill: { background: "rgba(255,255,255,0.13)", borderRadius: 10, padding: "10px 14px", display: "flex", alignItems: "center", gap: 9 },
     card: { background: "#fff", border: "1px solid rgba(127,119,221,0.15)", borderRadius: 12, padding: "1.25rem", marginBottom: "1rem", boxShadow: "0 2px 12px rgba(127,119,221,0.10)" },
@@ -133,9 +134,9 @@ export default function App() {
         {/* Header */}
         <div style={styles.header}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={styles.avatar}>CA</div>
+            <div style={styles.avatar}>{AppConfig.initials}</div>
             <div>
-              <div style={{ fontSize: 18, fontWeight: 600 }}>Carolina</div>
+              <div style={{ fontSize: 18, fontWeight: 600 }}>{AppConfig.name}</div>
               <div style={{ fontSize: 11, color: "#6b6b8a" }}>{new Date().toLocaleDateString("es-CR", { day: "numeric", month: "long", year: "numeric" })}</div>
             </div>
           </div>

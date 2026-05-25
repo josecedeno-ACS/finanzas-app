@@ -48,7 +48,6 @@ const [budgetForm, setBudgetForm] = useState({ category: "Comida", amount: "" })
   useEffect(() => {
     localStorage.setItem(AppConfig.storageKey, JSON.stringify(transactions));
   }, [transactions]);
-
   useEffect(() => {
   localStorage.setItem(AppConfig.storageKeyBudget, JSON.stringify(budgets));
 }, [budgets]);
@@ -223,12 +222,19 @@ const [budgetForm, setBudgetForm] = useState({ category: "Comida", amount: "" })
 {/* Presupuesto */}
 {tab === "presupuesto" && (
   <div>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
+      <button onClick={() => changeMonth(-1)} style={{ background: "#fff", border: "1px solid rgba(127,119,221,0.15)", borderRadius: 8, padding: "6px 12px", cursor: "pointer", color: "#6b6b8a" }}>{"<"}</button>
+      <span style={{ fontSize: 15, fontWeight: 600 }}>{MONTHS[viewDate.getMonth()]} {viewDate.getFullYear()}</span>
+      <button onClick={() => changeMonth(1)} style={{ background: "#fff", border: "1px solid rgba(127,119,221,0.15)", borderRadius: 8, padding: "6px 12px", cursor: "pointer", color: "#6b6b8a" }}>{">"}</button>
+    </div>
     <button onClick={() => setBudgetModal(true)} style={styles.addBtn}>
       + Establecer presupuesto
     </button>
     {CATS.expense.map((cat) => {
       const gastado = transactions
-        .filter((t) => t.type === "expense" && t.category === cat.name)
+        .filter((t) => t.type === "expense" && t.category === cat.name && 
+            new Date(t.date).getMonth() === viewDate.getMonth() &&
+            new Date(t.date).getFullYear() === viewDate.getFullYear())
         .reduce((s, t) => s + t.amount, 0);
       const presupuesto = budgets[cat.name] || 0;
       const pct = presupuesto > 0 ? Math.min(Math.round(gastado / presupuesto * 100), 100) : 0;
@@ -333,7 +339,7 @@ const [budgetForm, setBudgetForm] = useState({ category: "Comida", amount: "" })
         </div>
       </nav>
 
-{/* Modal Presupuesto */}
+      {/* Modal Presupuesto */}
 {budgetModal && (
   <div onClick={(e) => e.target === e.currentTarget && setBudgetModal(false)}
     style={{ position: "fixed", inset: 0, background: "rgba(26,26,46,0.5)", zIndex: 100, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
